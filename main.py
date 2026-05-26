@@ -1,13 +1,16 @@
 import customtkinter as ctk
 import tkinter as tk
 from tkinter import messagebox
+import db
 
 class ToDoApp(ctk.CTk):
     def __init__(self):
-        ctk.set_appearance_mode("dark")
         super().__init__()
+        ctk.set_appearance_mode("dark")
         self.geometry("900x600")
         self.create_widgets()
+        db.init_db()
+        self.load_tasks_from_db()
         
     def create_widgets(self):
         
@@ -19,11 +22,6 @@ class ToDoApp(ctk.CTk):
         self.entry_title.place(x=40, y=60)
 
         # Описание задачи
-        #self.label_description = ctk.CTkLabel(self, text='Задача:')
-        #self.label_description.place(x=40, y=100)
-        #self.entry_description = ctk.CTkEntry(self, placeholder_text='Задача')
-        #self.entry_description.place(x=40, y=140)
-
         self.label_description = ctk.CTkLabel(self, text='Задача:')
         self.label_description.place(x=40, y=100)
 
@@ -44,11 +42,14 @@ class ToDoApp(ctk.CTk):
         # Кнопка удаления задачи
         self.btn_del = ctk.CTkButton(self, text='Удалить', command=self.delete_task)
         self.btn_del.place(x=400, y=450)
+    
+    # Функция для добавления задачи в базу данных также в listbox
     def add_task(self):
         try:
             title = self.entry_title.get().strip()
             description = self.textbox_description.get('1.0', tk.END).strip()
             if title and description:
+                db.add_task_to_db(title, description)
                 text = f'{title}: {description}'
                 self.listbox.insert(tk.END, text)
                 self.entry_title.delete(0, tk.END)
@@ -57,12 +58,28 @@ class ToDoApp(ctk.CTk):
                 messagebox.showwarning('Ошибка', 'Напишите название и саму задачу для добавления')
         except Exception as e:
             messagebox.showerror('Ошибка', f'Произошла ошибка: {e}')
+    
+    # Функция для удаления задачи из базы данных также из listbox
     def delete_task(self):
         try:
             selected_task_index = self.listbox.curselection()[0]
+            full_text = self.listbox.get(selected_task_index)
+            title, description = full_text.split(': ', 1)
+            db.delete_task_from_db(title, description)
             self.listbox.delete(selected_task_index)
         except:
             messagebox.showwarning('Ошибка', 'Выберите задачу для удаления')
+            
+    # Функция для загрузки данных в listbox
+    def load_tasks_from_db(self):
+        try:
+            tasks = db.get_all_tasks()
+            
+            for title, description in tasks:
+                text = f'{title}: {description}'
+                self.listbox.insert(tk.END, text)
+        except Exception as e:
+            messagebox.showerror('Ошибка', f'Не удалось загрузить задачи: {e}')
         
 app = ToDoApp()
 app.mainloop()
