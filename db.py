@@ -8,7 +8,8 @@ def init_db():
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS tasks (
     title TEXT NOT NULL,
-    description TEXT NOT NULL
+    description TEXT NOT NULL,
+    completed INTEGER DEFAULT 0
     );
     ''')
     conn.commit()
@@ -38,7 +39,39 @@ def get_all_tasks():
     cursor = conn.cursor()
     cursor.execute('''
     SELECT title, description FROM tasks
+    WHERE completed = 0
     ''')
     rows = cursor.fetchall()
     conn.close()
     return rows
+
+def get_completed_tasks():
+    conn = sqlite3.connect('todo.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+    SELECT title, description FROM tasks
+    WHERE completed = 1
+    ''')
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+    
+def mark_task_completed(title, description):
+    conn = sqlite3.connect('todo.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+    UPDATE tasks SET completed = 1
+    WHERE title = ? AND description = ?
+    ''', (title, description))
+    conn.commit()
+    conn.close()
+    
+def clear_all_completed_tasks():
+    conn = sqlite3.connect('todo.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+    DELETE FROM tasks
+    WHERE completed = 1
+    ''')
+    conn.commit()
+    conn.close()

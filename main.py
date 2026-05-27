@@ -11,6 +11,7 @@ class ToDoApp(ctk.CTk):
         self.create_widgets()
         db.init_db()
         self.load_tasks_from_db()
+        self.load_completed_tasks_from_db()
         
     def create_widgets(self):
         
@@ -35,6 +36,13 @@ class ToDoApp(ctk.CTk):
         self.listbox = tk.Listbox(self)
         self.listbox.place(x=400, y=50, width=400, height=300)
         
+        # Выполнение задачи
+        self.label_completed = ctk.CTkLabel(self, text='Выполнение:')
+        self.label_completed.place(x=40, y=360)
+        
+        self.listbox_completed = tk.Listbox(self)
+        self.listbox_completed.place(x=40, y=400, width=200, height=150)
+          
         # Кнопка добавления задачи
         self.btn_add = ctk.CTkButton(self, text='Добавить', command=self.add_task)
         self.btn_add.place(x=400, y=400)
@@ -42,6 +50,14 @@ class ToDoApp(ctk.CTk):
         # Кнопка удаления задачи
         self.btn_del = ctk.CTkButton(self, text='Удалить', command=self.delete_task)
         self.btn_del.place(x=400, y=450)
+        
+        # Кнопка для добавления задачи в выполненные
+        self.btn_add_completed = ctk.CTkButton(self, text='Выполнен', command=self.add_to_completed)
+        self.btn_add_completed.place(x=550, y=400)
+        
+        # Кнопка для очистки выполненных задач
+        self.btn_clear_completed_tasks = ctk.CTkButton(self, text='Очистить выполненные', command=self.clear_completed_tasks)
+        self.btn_clear_completed_tasks.place(x=550, y=450)
     
     # Функция для добавления задачи в базу данных также в listbox
     def add_task(self):
@@ -69,6 +85,30 @@ class ToDoApp(ctk.CTk):
             self.listbox.delete(selected_task_index)
         except:
             messagebox.showwarning('Ошибка', 'Выберите задачу для удаления')
+    
+    # Функция для добавления задачи в выполненных    
+    def add_to_completed(self):
+        try:
+            selected_task_index = self.listbox.curselection()[0]
+            full_text = self.listbox.get(selected_task_index)
+            title, description = full_text.split(': ', 1)
+            db.mark_task_completed(title, description)
+            text  = f'{title}: {description}'
+            self.listbox_completed.insert(tk.END, text)
+            self.listbox.delete(selected_task_index)
+        except Exception as e:
+            messagebox.showerror('Ошибка', f'Не удалось добавить в выполненные задачи: {e}')
+        
+    # Функция для удаления всех выполненных задач
+    def clear_completed_tasks(self):
+        result = messagebox.askyesno('Предупреждение', 'Вы точно хотите удалить все выполненные задачи?')
+        
+        if result:
+            try:
+                db.clear_all_completed_tasks()
+                self.listbox_completed.delete(0, tk.END)
+            except Exception as e:
+                messagebox.showerror('Ошибка', f'Не удалось очистить выполненные задачи: {e}')
             
     # Функция для загрузки данных в listbox
     def load_tasks_from_db(self):
@@ -81,5 +121,16 @@ class ToDoApp(ctk.CTk):
         except Exception as e:
             messagebox.showerror('Ошибка', f'Не удалось загрузить задачи: {e}')
         
+    # Функция для загрузки выполненных задач в listbox_completed    
+    def load_completed_tasks_from_db(self):
+        try:
+            tasks = db.get_completed_tasks()
+            
+            for title, description in tasks:
+                text = f'{title}: {description}'
+                self.listbox_completed.insert(tk.END, text)
+        except Exception as e:
+            messagebox.showerror('Ошибка', f'Не удалось загрузить задачи: {e}')
+            
 app = ToDoApp()
 app.mainloop()
