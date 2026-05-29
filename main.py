@@ -44,20 +44,27 @@ class ToDoApp(ctk.CTk):
         self.listbox_completed.place(x=40, y=400, width=200, height=150)
           
         # Кнопка добавления задачи
-        self.btn_add = ctk.CTkButton(self, text='Добавить', command=self.add_task)
+        self.btn_add = ctk.CTkButton(self, text='Добавить', command=self.add_task, width=120, height=40)
         self.btn_add.place(x=400, y=400)
         
         # Кнопка удаления задачи
-        self.btn_del = ctk.CTkButton(self, text='Удалить', command=self.delete_task)
+        self.btn_del = ctk.CTkButton(self, text='Удалить', command=self.delete_task, width=120, height=40)
         self.btn_del.place(x=400, y=450)
         
         # Кнопка для добавления задачи в выполненные
-        self.btn_add_completed = ctk.CTkButton(self, text='Выполнен', command=self.add_to_completed)
+        self.btn_add_completed = ctk.CTkButton(self, text='Выполнен', command=self.add_to_completed, width=120, height=40)
         self.btn_add_completed.place(x=550, y=400)
         
+        # Кнопка для редактирования задачи
+        self.btn_edit = ctk.CTkButton(self, text='Редактировать', command=self.edit_task, width=120, height=40)
+        self.btn_edit.place(x=550, y=450)
+                
         # Кнопка для очистки выполненных задач
-        self.btn_clear_completed_tasks = ctk.CTkButton(self, text='Очистить выполненные', command=self.clear_completed_tasks)
-        self.btn_clear_completed_tasks.place(x=550, y=450)
+        self.btn_clear_completed_tasks = ctk.CTkButton(self, text='Очистить выполненные', command=self.clear_completed_tasks, width=120, height=40)
+        self.btn_clear_completed_tasks.place(x=700, y=400)
+        
+        self.btn_return = ctk.CTkButton(self, text='Вернуть в список', command=self.return_to_tasks, width=120, height=40)
+        self.btn_return.place(x=700, y=450)
     
     # Функция для добавления задачи в базу данных также в listbox
     def add_task(self):
@@ -98,7 +105,22 @@ class ToDoApp(ctk.CTk):
             self.listbox.delete(selected_task_index)
         except Exception as e:
             messagebox.showerror('Ошибка', f'Не удалось добавить в выполненные задачи: {e}')
-        
+    
+    # Функция для редактирования задачи    
+    def edit_task(self):
+        try:
+            selected_task_index = self.listbox.curselection()[0]
+            full_text = self.listbox.get(selected_task_index)
+            title, description = full_text.split(': ', 1)
+            self.entry_title.delete(0, tk.END)
+            self.entry_title.insert(0, title)
+            self.textbox_description.delete('1.0', tk.END)
+            self.textbox_description.insert('1.0', description)
+            db.delete_task_from_db(title, description)
+            self.listbox.delete(selected_task_index)
+        except Exception as e:
+            messagebox.showerror('Ошибка', f'Не удалось добавить в выполненные задачи: {e}')
+            
     # Функция для удаления всех выполненных задач
     def clear_completed_tasks(self):
         result = messagebox.askyesno('Предупреждение', 'Вы точно хотите удалить все выполненные задачи?')
@@ -109,6 +131,22 @@ class ToDoApp(ctk.CTk):
                 self.listbox_completed.delete(0, tk.END)
             except Exception as e:
                 messagebox.showerror('Ошибка', f'Не удалось очистить выполненные задачи: {e}')
+    
+    # Функция для возврата задачи из выполненных в список задач
+    def return_to_tasks(self):
+        try:
+            selected_task_index = self.listbox_completed.curselection()[0]
+            full_text = self.listbox_completed.get(selected_task_index)
+            title, description = full_text.split(': ', 1)
+            
+            db.return_task_to_active(title, description)
+            self.listbox.insert(tk.END, full_text)
+            self.listbox_completed.delete(selected_task_index)
+            
+        except IndexError:
+            messagebox.showerror('Ошибка', 'Выберите задачу в списке выполненных для возврата')
+        except Exception as e:
+            messagebox.showerror('Ошибка', f'Не удалось вернуть задачу: {e}')
             
     # Функция для загрузки данных в listbox
     def load_tasks_from_db(self):

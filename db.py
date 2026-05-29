@@ -65,7 +65,19 @@ def mark_task_completed(title, description):
     ''', (title, description))
     conn.commit()
     conn.close()
-    
+
+def return_task_to_active(title, description):
+    conn = sqlite3.connect('todo.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+    UPDATE tasks
+    SET completed = 0
+    WHERE title = ? AND description = ?
+    AND completed = 1
+    ''', (title, description))
+    conn.commit()
+    conn.close()
+
 def clear_all_completed_tasks():
     conn = sqlite3.connect('todo.db')
     cursor = conn.cursor()
